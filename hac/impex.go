@@ -44,6 +44,9 @@ func (s *ImpexService) Import(
 	}
 
 	doc := soup.HTMLParse(string(body))
+	if doc.Error != nil {
+		return "", doc.Error
+	}
 
 	resultTag := doc.Find("span", "id", "impexResult")
 	if resultTag.Error != nil {
@@ -115,6 +118,9 @@ func (s *ImpexService) Export(ctx context.Context, q ImpexExportRequest) (string
 	}
 
 	doc := soup.HTMLParse(string(body))
+	if doc.Error != nil {
+		return "", "", doc.Error
+	}
 
 	resultTag := doc.Find("span", "id", "impexResult")
 	result := ""
