@@ -103,9 +103,7 @@ func (s *ImpexService) Export(ctx context.Context, q ImpexExportRequest) (string
 		http.MethodPost,
 		"console/impex/export",
 		strings.NewReader(form.Encode()),
-		map[string]string{
-			"Content-Type": "application/x-www-form-urlencoded",
-		},
+		map[string]string{"Content-Type": "application/x-www-form-urlencoded"},
 	)
 
 	if err != nil {
@@ -123,21 +121,30 @@ func (s *ImpexService) Export(ctx context.Context, q ImpexExportRequest) (string
 	}
 
 	resultTag := doc.Find("span", "id", "impexResult")
-	result := ""
-	if resultTag.Error == nil {
-		result = resultTag.Attrs()["data-result"]
+
+	if resultTag.Error != nil {
+		return "", "", fmt.Errorf("missing impexResult tag")
 	}
 
-	downloadURL := ""
-	linkTag := doc.Find("div", "id", "downloadExportResultData").Find("a")
-	if linkTag.Error == nil {
-		href, ok := linkTag.Attrs()["href"]
-		if ok {
-			downloadURL = href
-		}
+	result := resultTag.Attrs()["data-result"]
+
+	parent := doc.Find("div", "id", "downloadExportResultData")
+	if parent.Error != nil {
+		return result, "", fmt.Errorf("missing downloadExportResultData container")
 	}
 
-	return result, downloadURL, nil
+	link := parent.Find("a")
+	if link.Error != nil {
+		return result, "", fmt.Errorf("missing download link inside container")
+	}
+
+	href, ok := link.Attrs()["href"]
+
+	if !ok || href == "" {
+		return result, "", fmt.Errorf("download link missing href attribute")
+	}
+
+	return result, href, nil
 }
 
 func (s *ImpexService) DownloadExportZip(downloadPath string) ([]byte, error) {
