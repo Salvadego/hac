@@ -39,10 +39,6 @@ type FlexSearchResponse struct {
 }
 
 type FlexException struct {
-	Exception Exception `json:"exception"`
-}
-
-type Exception struct {
 	Cause            Cause        `json:"cause"`
 	StackTrace       []StackTrace `json:"stackTrace"`
 	Message          string       `json:"message"`
