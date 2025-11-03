@@ -25,21 +25,43 @@ type FlexExecuteOptions struct {
 }
 
 type FlexSearchResponse struct {
-	CatalogVersionsAsString string     `json:"catalogVersionsAsString,omitempty"`
-	DataSourceId            string     `json:"dataSourceId,omitempty"`
-	Exception               any        `json:"exception,omitempty"`
-	ExceptionStackTrace     string     `json:"exceptionStackTrace,omitempty"`
-	ExecutionTime           float64    `json:"executionTime,omitempty"`
-	Headers                 []string   `json:"headers,omitempty"`
-	ParametersAsString      string     `json:"parametersAsString,omitempty"`
-	Query                   string     `json:"query,omitempty"`
-	RawExecution            bool       `json:"rawExecution,omitempty"`
-	ResultCount             float64    `json:"resultCount,omitempty"`
-	ResultList              [][]string `json:"resultList,omitempty"`
+	CatalogVersionsAsString string        `json:"catalogVersionsAsString,omitempty"`
+	DataSourceId            string        `json:"dataSourceId,omitempty"`
+	Exception               FlexException `json:"exception"`
+	ExceptionStackTrace     string        `json:"exceptionStackTrace,omitempty"`
+	ExecutionTime           float64       `json:"executionTime,omitempty"`
+	Headers                 []string      `json:"headers,omitempty"`
+	ParametersAsString      string        `json:"parametersAsString,omitempty"`
+	Query                   string        `json:"query,omitempty"`
+	RawExecution            bool          `json:"rawExecution,omitempty"`
+	ResultCount             float64       `json:"resultCount,omitempty"`
+	ResultList              [][]string    `json:"resultList,omitempty"`
 }
 
 type FlexException struct {
-	Message string `json:"message"`
+	Exception Exception `json:"exception"`
+}
+
+type Exception struct {
+	Cause            Cause        `json:"cause"`
+	StackTrace       []StackTrace `json:"stackTrace"`
+	Message          string       `json:"message"`
+	LocalizedMessage string       `json:"localizedMessage"`
+}
+
+type Cause struct {
+	StackTrace       []StackTrace `json:"stackTrace"`
+	ErrorCode        int64        `json:"errorCode"`
+	Message          string       `json:"message"`
+	LocalizedMessage string       `json:"localizedMessage"`
+}
+
+type StackTrace struct {
+	MethodName   string `json:"methodName"`
+	FileName     string `json:"fileName"`
+	LineNumber   int64  `json:"lineNumber"`
+	NativeMethod bool   `json:"nativeMethod"`
+	ClassName    string `json:"className"`
 }
 
 type GroovyRequest struct {
