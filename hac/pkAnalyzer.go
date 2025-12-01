@@ -11,6 +11,10 @@ type PKAnalyzerService struct {
 	client *HACClient
 }
 
+func NewPKAnalyzerService(c *HACClient) *PKAnalyzerService {
+	return &PKAnalyzerService{client: c}
+}
+
 func (s *PKAnalyzerService) Analyze(ctx context.Context, pkRequest PKAnalyzeRequest) (*PKAnalyzeResponse, error) {
 	form := s.client.buildForm(pkRequest)
 

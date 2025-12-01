@@ -15,6 +15,10 @@ type ImpexService struct {
 	client *HACClient
 }
 
+func NewImpexService(c *HACClient) *ImpexService {
+	return &ImpexService{client: c}
+}
+
 func (s *ImpexService) Import(
 	ctx context.Context,
 	q ImpexImportRequest,

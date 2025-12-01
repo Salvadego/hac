@@ -26,6 +26,7 @@ type HACClient struct {
 	Groovy *GroovyService
 	Impex  *ImpexService
 	PKA    *PKAnalyzerService
+	Log    *LogService
 }
 
 func NewClient(cfg *Config) *HACClient {
@@ -48,11 +49,12 @@ func NewClient(cfg *Config) *HACClient {
 		jar:        jar,
 	}
 
-	client.Auth = &AuthService{client}
-	client.Flex = &FlexService{client}
-	client.Groovy = &GroovyService{client}
-	client.Impex = &ImpexService{client}
-	client.PKA = &PKAnalyzerService{client}
+	client.Auth = NewAuthService(client)
+	client.Flex = NewFlexService(client)
+	client.Groovy = NewGroovyService(client)
+	client.Impex = NewImpexService(client)
+	client.PKA = NewPKAnalyzerService(client)
+	client.Log = NewLogService(client)
 	return client
 }
 

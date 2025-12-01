@@ -13,6 +13,10 @@ type AuthService struct {
 	client *HACClient
 }
 
+func NewAuthService(c *HACClient) *AuthService {
+	return &AuthService{client: c}
+}
+
 var csrfRe = regexp.MustCompile(`name=["']_csrf["']\s+value=["'](.+?)["']`)
 
 func (s *AuthService) Login(ctx context.Context) error {

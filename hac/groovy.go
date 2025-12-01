@@ -12,6 +12,10 @@ type GroovyService struct {
 	client *HACClient
 }
 
+func NewGroovyService(c *HACClient) *GroovyService {
+	return &GroovyService{client: c}
+}
+
 func (s *GroovyService) Execute(
 	ctx context.Context,
 	q GroovyRequest,

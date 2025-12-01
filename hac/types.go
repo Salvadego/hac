@@ -135,3 +135,38 @@ type PKAnalyzeResponse struct {
 	PKMilliCnt         int      `json:"pkMilliCnt"`
 	PKComposedTypeCode string   `json:"pkComposedTypeCode"`
 }
+
+type ChangeLogRequest struct {
+	LoggerName   string       `form:"loggerName"`
+	LogLevelName LogLevelName `form:"levelName"`
+}
+
+type ChangeLogLevelResponse struct {
+	Loggers    []Logger     `json:"loggers"`
+	LevelName  LogLevelName `json:"levelName"`
+	LoggerName string       `json:"loggerName"`
+	Levels     []Level      `json:"levels"`
+}
+
+type Level struct {
+	StandardLevel  LogLevelName `json:"standardLevel"`
+	DeclaringClass string       `json:"declaringClass"`
+}
+
+type Logger struct {
+	Name           string  `json:"name"`
+	ParentName     *string `json:"parentName"`
+	EffectiveLevel Level   `json:"effectiveLevel"`
+}
+
+type LogLevelName string
+
+const (
+	LogLevelAll   LogLevelName = "ALL"
+	LogLevelDebug LogLevelName = "DEBUG"
+	LogLevelError LogLevelName = "ERROR"
+	LogLevelFatal LogLevelName = "FATAL"
+	LogLevelInfo  LogLevelName = "INFO"
+	LogLevelOff   LogLevelName = "OFF"
+	LogLevelWarn  LogLevelName = "WARN"
+)
