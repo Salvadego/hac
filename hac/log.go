@@ -16,8 +16,13 @@ func NewLogService(c *HACClient) *LogService {
 	return &LogService{client: c}
 }
 
+var (
+	currentHyCLIInfoLevel = LogLevelInfo
+	currentHyCLIInfoName  = "hycli_info_logs"
+)
+
 func (s *LogService) GetCurrentLoggers(ctx context.Context) ([]Logger, error) {
-	response, err := s.ChangeLogLevel(ctx, "root", LogLevelInfo)
+	response, err := s.ChangeLogLevel(ctx, currentHyCLIInfoName, currentHyCLIInfoLevel)
 	if err != nil {
 		return nil, err
 	}
@@ -26,7 +31,7 @@ func (s *LogService) GetCurrentLoggers(ctx context.Context) ([]Logger, error) {
 }
 
 func (s *LogService) GetLogLevels(ctx context.Context) ([]Level, error) {
-	response, err := s.ChangeLogLevel(ctx, "root", LogLevelInfo)
+	response, err := s.ChangeLogLevel(ctx, currentHyCLIInfoName, currentHyCLIInfoLevel)
 	if err != nil {
 		return nil, err
 	}
@@ -66,6 +71,10 @@ func (s *LogService) ChangeLogLevel(ctx context.Context, loggerName string, leve
 	var result ChangeLogLevelResponse
 	if err := json.Unmarshal([]byte(body), &result); err != nil {
 		return nil, fmt.Errorf("decode ChangeLogLevel response %w", err)
+	}
+
+	if result.LoggerName == currentHyCLIInfoName {
+		currentHyCLIInfoLevel = result.LevelName
 	}
 
 	return &result, nil
