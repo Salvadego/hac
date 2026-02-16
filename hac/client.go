@@ -72,10 +72,10 @@ func (c *HACClient) doRequest(
 		return nil, fmt.Errorf("invalid URL path: %w", err)
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, c.Timeout)
+	ctxWithCancel, cancel := context.WithTimeout(context.WithoutCancel(ctx), c.Timeout)
 	defer cancel()
 
-	req, err := http.NewRequestWithContext(ctx, method, u, body)
+	req, err := http.NewRequestWithContext(ctxWithCancel, method, u, body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
