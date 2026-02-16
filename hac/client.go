@@ -10,6 +10,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type HACClient struct {
@@ -20,6 +21,7 @@ type HACClient struct {
 	httpClient *http.Client
 	jar        *cookiejar.Jar
 	csrf       string
+	Timeout    time.Duration
 
 	Auth   *AuthService
 	Flex   *FlexService
@@ -47,6 +49,7 @@ func NewClient(cfg *Config) *HACClient {
 		userAgent:  cfg.UserAgent,
 		httpClient: httpClient,
 		jar:        jar,
+		Timeout:    cfg.Timeout,
 	}
 
 	client.Auth = NewAuthService(client)
@@ -68,6 +71,8 @@ func (c *HACClient) doRequest(
 	if err != nil {
 		return nil, fmt.Errorf("invalid URL path: %w", err)
 	}
+
+	ctx, _ = context.WithTimeout(ctx, c.Timeout)
 
 	req, err := http.NewRequestWithContext(ctx, method, u, body)
 	if err != nil {

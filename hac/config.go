@@ -22,7 +22,7 @@ func (cfg *Config) sanitize() {
 
 	cfg.BaseURL = trimSuffixSlash(cfg.BaseURL)
 	if cfg.Timeout == 0 {
-		cfg.Timeout = time.Second * 30
+		cfg.Timeout = time.Minute * 3
 	}
 
 	if cfg.UserAgent == "" {
