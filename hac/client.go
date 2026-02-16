@@ -72,7 +72,8 @@ func (c *HACClient) doRequest(
 		return nil, fmt.Errorf("invalid URL path: %w", err)
 	}
 
-	ctx, _ = context.WithTimeout(ctx, c.Timeout)
+	ctx, cancel := context.WithTimeout(ctx, c.Timeout)
+	defer cancel()
 
 	req, err := http.NewRequestWithContext(ctx, method, u, body)
 	if err != nil {
