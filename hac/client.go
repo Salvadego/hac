@@ -75,7 +75,7 @@ func (c *HACClient) doRequest(
 	// ctxWithCancel, cancel := context.WithTimeout(context.WithoutCancel(ctx), c.Timeout)
 	// defer cancel()
 
-	req, err := http.NewRequestWithContext(ctxWithCancel, method, u, body)
+	req, err := http.NewRequestWithContext(ctx, method, u, body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
