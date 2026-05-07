@@ -45,7 +45,7 @@ func (s *FlexService) Execute(
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Error: %w", resp.Status)
+		return nil, fmt.Errorf("Error: %s", resp.Status)
 	}
 
 	body, err := readAllBody(resp)
