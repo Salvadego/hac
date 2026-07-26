@@ -221,6 +221,7 @@ func (s *ImpexService) UploadZip(
 
 	headers := map[string]string{
 		"Content-Type": writer.FormDataContentType(),
+		"Referer":      strings.TrimSuffix(s.client.baseURL, "/") + "/console/impex/import/upload",
 	}
 
 	resp, err := s.client.doRequest(
@@ -232,6 +233,11 @@ func (s *ImpexService) UploadZip(
 	)
 	if err != nil {
 		return "", err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		b, _ := io.ReadAll(resp.Body)
+		return "", fmt.Errorf("upload failed: status %d body: %s", resp.StatusCode, b)
 	}
 
 	respBody, err := readAllBody(resp)
