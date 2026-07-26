@@ -8,6 +8,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"net/textproto"
 	"path/filepath"
 	"strings"
 
@@ -198,7 +199,14 @@ func (s *ImpexService) UploadZip(
 	var body bytes.Buffer
 	writer := multipart.NewWriter(&body)
 
-	part, err := writer.CreateFormFile("file", filepath.Base(filename))
+	h := make(textproto.MIMEHeader)
+	h.Set("Content-Disposition", fmt.Sprintf(
+		`form-data; name="file"; filename="%s"`,
+		filepath.Base(filename),
+	))
+	h.Set("Content-Type", "application/zip")
+
+	part, err := writer.CreatePart(h)
 	if err != nil {
 		return "", fmt.Errorf("failed to create multipart form field: %w", err)
 	}
