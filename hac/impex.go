@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 
@@ -46,6 +47,7 @@ func (s *ImpexService) Import(
 	if err != nil {
 		return "", err
 	}
+	log.Println(body)
 
 	doc := soup.HTMLParse(string(body))
 	if doc.Error != nil {
