@@ -1,12 +1,14 @@
 package hac
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
+	"mime/multipart"
 	"net/http"
+	"path/filepath"
 	"strings"
 
 	"github.com/anaskhan96/soup"
@@ -47,7 +49,6 @@ func (s *ImpexService) Import(
 	if err != nil {
 		return "", err
 	}
-	log.Println(body)
 
 	doc := soup.HTMLParse(string(body))
 	if doc.Error != nil {
@@ -186,4 +187,68 @@ func (s *ImpexService) DownloadExportZip(downloadPath string) ([]byte, error) {
 	}
 
 	return io.ReadAll(resp.Body)
+}
+
+func (s *ImpexService) UploadZip(
+	ctx context.Context,
+	filename string,
+	fileData []byte,
+) (string, error) {
+
+	var body bytes.Buffer
+	writer := multipart.NewWriter(&body)
+
+	part, err := writer.CreateFormFile("file", filepath.Base(filename))
+	if err != nil {
+		return "", fmt.Errorf("failed to create multipart form field: %w", err)
+	}
+
+	if _, err := part.Write(fileData); err != nil {
+		return "", fmt.Errorf("failed to write file bytes to form: %w", err)
+	}
+
+	if err := writer.Close(); err != nil {
+		return "", fmt.Errorf("failed to close multipart writer: %w", err)
+	}
+
+	headers := map[string]string{
+		"Content-Type": writer.FormDataContentType(),
+	}
+
+	resp, err := s.client.doRequest(
+		ctx,
+		http.MethodPost,
+		"console/impex/import/upload",
+		&body,
+		headers,
+	)
+	if err != nil {
+		return "", err
+	}
+
+	respBody, err := readAllBody(resp)
+	if err != nil {
+		return "", err
+	}
+
+	doc := soup.HTMLParse(string(respBody))
+	if doc.Error != nil {
+		return "", doc.Error
+	}
+
+	resultTag := doc.Find("span", "id", "impexResult")
+	if resultTag.Error != nil {
+		resultTag = doc.Find("div", "class", "impexResult")
+	}
+
+	if resultTag.Error != nil {
+		return string(respBody), nil
+	}
+
+	result := resultTag.Attrs()["data-result"]
+	if result == "" {
+		result = resultTag.FullText()
+	}
+
+	return result, nil
 }
