@@ -79,7 +79,6 @@ func (c *HACClient) doRequest(
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
-	fmt.Println(req.Header)
 
 	req.Header.Set("User-Agent", c.userAgent)
 	for k, v := range headers {
@@ -89,6 +88,7 @@ func (c *HACClient) doRequest(
 	if c.csrf != "" {
 		req.Header.Set("X-CSRF-TOKEN", c.csrf)
 	}
+	fmt.Println(req.Header, req.ContentLength, req.Host)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
