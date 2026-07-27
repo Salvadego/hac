@@ -79,7 +79,7 @@ func (c *HACClient) doRequest(
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
-	fmt.Println(req)
+	fmt.Println(req.Header)
 
 	req.Header.Set("User-Agent", c.userAgent)
 	for k, v := range headers {
@@ -92,10 +92,10 @@ func (c *HACClient) doRequest(
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
+		fmt.Println(err)
 		return nil, fmt.Errorf("request failed: %w", err)
 	}
-
-	fmt.Println(resp)
+	fmt.Println(resp.StatusCode)
 
 	if resp.StatusCode == http.StatusMethodNotAllowed {
 		return c.doRequestRetry405(ctx, method, path, body, headers)
