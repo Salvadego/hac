@@ -198,6 +198,11 @@ func (s *ImpexService) UploadZip(
 
 	var body bytes.Buffer
 	writer := multipart.NewWriter(&body)
+	_ = writer.WriteField("encoding", "UTF-8")
+	_ = writer.WriteField("validationEnum", "IMPORT_STRICT")
+	_ = writer.WriteField("maxThreads", "4")
+	_ = writer.WriteField("legacyMode", "false")
+	_ = writer.WriteField("enableCodeExecution", "true")
 
 	h := make(textproto.MIMEHeader)
 	h.Set("Content-Disposition", fmt.Sprintf(
