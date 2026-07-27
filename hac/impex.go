@@ -1,14 +1,16 @@
 package hac
 
 import (
+	"bytes"
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
+	"net/textproto"
+	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/anaskhan96/soup"
 )
@@ -194,86 +196,73 @@ func (s *ImpexService) UploadZip(
 	fileData []byte,
 ) (string, error) {
 
-	b64 := base64.StdEncoding.EncodeToString(fileData)
-	jobCode := fmt.Sprintf("importCronJob_%d", time.Now().UnixNano())
+	var body bytes.Buffer
+	writer := multipart.NewWriter(&body)
 
-	script := fmt.Sprintf(`
-import de.hybris.platform.impex.model.cronjob.ImpExImportCronJobModel
-import de.hybris.platform.impex.model.cronjob.ImpExImportJobModel
-import de.hybris.platform.impex.enums.ImpExValidationModeEnum
-import de.hybris.platform.impex.model.ImpExMediaModel
+	h := make(textproto.MIMEHeader)
+	h.Set("Content-Disposition", fmt.Sprintf(
+		`form-data; name="file"; filename="%s"`,
+		filepath.Base(filename),
+	))
+	h.Set("Content-Type", "application/zip")
 
-def zipBytes = Base64.getDecoder().decode("%s")
-
-ImpExMediaModel jobMedia = modelService.create(ImpExMediaModel.class)
-jobMedia.setCode("%s_zip")
-jobMedia.setCatalogVersion(null)
-modelService.save(jobMedia)
-mediaService.setStreamForMedia(jobMedia, new ByteArrayInputStream(zipBytes), "import.zip", "application/zip")
-
-// ImpExMediaModel mediasMedia = modelService.create(ImpExMediaModel.class)
-// mediasMedia.setCode("%s_medias")
-// mediasMedia.setCatalogVersion(null)
-// modelService.save(mediasMedia)
-// mediaService.setStreamForMedia(mediasMedia, new ByteArrayInputStream(zipBytes), "import.zip", "application/zip")
-
-ImpExImportJobModel importJob = flexibleSearchService
-    .search("SELECT {PK} FROM {ImpExImportJob} WHERE {code} = 'ImpEx-Import'")
-    .getResult()
-    .get(0)
-
-ImpExImportCronJobModel importCronJob = modelService.create(ImpExImportCronJobModel.class)
-importCronJob.setCode("%s")
-importCronJob.setJob(importJob)
-importCronJob.setJobMedia(jobMedia)
-importCronJob.setZipentry("importscript.impex")
-// importCronJob.setMediasMedia(mediasMedia)
-// importCronJob.setUnzipMediasMedia(true)
-importCronJob.setMode(ImpExValidationModeEnum.IMPORT_STRICT)
-importCronJob.setMaxThreads(10)
-importCronJob.setLogToDatabase(true)
-importCronJob.setDumpingAllowed(true)
-modelService.save(importCronJob)
-
-cronJobService.performCronJob(importCronJob, true)
-modelService.refresh(importCronJob)
-
-println "STATUS:" + importCronJob.status
-println "RESULT:" + importCronJob.result
-println "LASTLINE:" + importCronJob.lastSuccessfulLine
-println "VALUECOUNT:" + importCronJob.valueCount
-if (importCronJob.unresolvedDataStore) {
-    println "UNRESOLVED:" + importCronJob.unresolvedDataStore.code
-}
-`, b64, jobCode, jobCode, jobCode)
-
-	resp, err := s.client.Groovy.Execute(ctx, GroovyRequest{
-		Script: script,
-	})
+	part, err := writer.CreatePart(h)
 	if err != nil {
-		return "", fmt.Errorf("groovy execute failed: %w", err)
-	}
-	if resp == nil {
-		return "", fmt.Errorf("empty groovy response")
+		return "", fmt.Errorf("failed to create multipart form field: %w", err)
 	}
 
-	output := resp.Output
-
-	status := extractField(output, "STATUS:")
-	result := extractField(output, "RESULT:")
-
-	if result != "" && result != "SUCCESS" {
-		return output, fmt.Errorf("import finished with result=%s status=%s", result, status)
+	if _, err := part.Write(fileData); err != nil {
+		return "", fmt.Errorf("failed to write file bytes to form: %w", err)
 	}
 
-	return output, nil
-}
-
-func extractField(output, prefix string) string {
-	for line := range strings.SplitSeq(output, "\n") {
-		if after, ok :=strings.CutPrefix(line, prefix); ok  {
-			return strings.TrimSpace(after)
-		}
+	if err := writer.Close(); err != nil {
+		return "", fmt.Errorf("failed to close multipart writer: %w", err)
 	}
-	return ""
+
+	headers := map[string]string{
+		"Content-Type": writer.FormDataContentType(),
+		"Referer":      strings.TrimSuffix(s.client.baseURL, "/") + "/console/impex/import/upload",
+	}
+
+	resp, err := s.client.doRequest(
+		ctx,
+		http.MethodPost,
+		"console/impex/import/upload",
+		&body,
+		headers,
+	)
+	if err != nil {
+		return "", err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		b, _ := io.ReadAll(resp.Body)
+		return "", fmt.Errorf("upload failed: status %d body: %s", resp.StatusCode, b)
+	}
+
+	respBody, err := readAllBody(resp)
+	if err != nil {
+		return "", err
+	}
+
+	doc := soup.HTMLParse(string(respBody))
+	if doc.Error != nil {
+		return "", doc.Error
+	}
+
+	resultTag := doc.Find("span", "id", "impexResult")
+	if resultTag.Error != nil {
+		resultTag = doc.Find("div", "class", "impexResult")
+	}
+
+	if resultTag.Error != nil {
+		return string(respBody), nil
+	}
+
+	result := resultTag.Attrs()["data-result"]
+	if result == "" {
+		result = resultTag.FullText()
+	}
+
+	return result, nil
 }
