@@ -88,14 +88,11 @@ func (c *HACClient) doRequest(
 	if c.csrf != "" {
 		req.Header.Set("X-CSRF-TOKEN", c.csrf)
 	}
-	fmt.Println(req.Header, req.ContentLength, req.Host)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		fmt.Println(err)
 		return nil, fmt.Errorf("request failed: %w", err)
 	}
-	fmt.Println(resp.StatusCode)
 
 	if resp.StatusCode == http.StatusMethodNotAllowed {
 		return c.doRequestRetry405(ctx, method, path, body, headers)
